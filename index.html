@@ -1,105 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friendship Quiz</title>
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-      import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-      // Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
-        authDomain: "truth-dare-5a92c.firebaseapp.com",
-        projectId: "truth-dare-5a92c",
-        storageBucket: "truth-dare-5a92c.firebasestorage.app",
-        messagingSenderId: "299104332770",
-        appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
-        measurementId: "G-NER090QMCZ"
-      };
-
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const database = getDatabase(app);
-
-      // Sample questions
-      const questions = [
-        {
-          id: 'q1',
-          text: 'What\'s your favorite color?',
-          options: ['Red', 'Blue']
-        },
-        {
-          id: 'q2',
-          text: 'What\'s your favorite animal?',
-          options: ['Dog', 'Cat']
-        }
-      ];
-
-      // Render questions
-      function renderQuestions() {
-        const container = document.getElementById('quiz-container');
-        questions.forEach((question, index) => {
-          const questionElement = document.createElement('div');
-          questionElement.classList.add('question');
-
-          const questionText = document.createElement('p');
-          questionText.textContent = question.text;
-          questionElement.appendChild(questionText);
-
-          question.options.forEach(option => {
-            const optionLabel = document.createElement('label');
-            const input = document.createElement('input');
-            input.type = 'radio';
-            input.name = `q${index}`;
-            input.value = option;
-            optionLabel.appendChild(input);
-            optionLabel.appendChild(document.createTextNode(option));
-            questionElement.appendChild(optionLabel);
-          });
-
-          container.appendChild(questionElement);
-        });
-      }
-
-      // Save quiz answers to Firebase
-      function generateQuizLink() {
-        const selectedAnswers = {};
-        questions.forEach((question, index) => {
-          const selectedOption = document.querySelector(`input[name="q${index}"]:checked`);
-          if (selectedOption) {
-            selectedAnswers[question.id] = selectedOption.value;
-          }
-        });
-
-        if (Object.keys(selectedAnswers).length === questions.length) {
-          const quizId = push(ref(database, 'quizzes')).key;
-          set(ref(database, 'quizzes/' + quizId), {
-            questions: questions,
-            answers: selectedAnswers
-          });
-
-          // Generate link
-          const quizLink = window.location.origin + `/play.html?quizId=${quizId}`;
-          document.getElementById('quiz-link').textContent = quizLink;
-          document.getElementById('quiz-link').setAttribute('href', quizLink);
-        } else {
-          alert('Please answer all the questions!');
-        }
-      }
-
-      // Wait for DOM to load
-      document.addEventListener('DOMContentLoaded', () => {
-        renderQuestions();
-      });
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    .btn {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: white;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-    <h1>Friendship Quiz</h1>
-    <div id="quiz-container"></div>
-    <button onclick="generateQuizLink()">Generate Quiz Link</button>
-    <br>
-    <a id="quiz-link" target="_blank"></a>
+  <div class="container">
+    <h1>Quiz App</h1>
+    <form id="quiz-form">
+      <div class="question">
+        <p>1. What is the capital of France?</p>
+        <div class="options">
+          <label><input type="radio" name="q1" value="Paris" required> Paris</label>
+          <label><input type="radio" name="q1" value="London"> London</label>
+          <label><input type="radio" name="q1" value="Berlin"> Berlin</label>
+          <label><input type="radio" name="q1" value="Madrid"> Madrid</label>
+        </div>
+      </div>
+      <div class="question">
+        <p>2. What is 5 + 3?</p>
+        <div class="options">
+          <label><input type="radio" name="q2" value="8" required> 8</label>
+          <label><input type="radio" name="q2" value="7"> 7</label>
+          <label><input type="radio" name="q2" value="10"> 10</label>
+          <label><input type="radio" name="q2" value="5"> 5</label>
+        </div>
+      </div>
+      <div>
+        <label for="name">Enter your name:</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <button type="submit" class="btn">Generate and Save</button>
+    </form>
+  </div>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+      authDomain: "truth-dare-5a92c.firebaseapp.com",
+      databaseURL: "https://truth-dare-5a92c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "truth-dare-5a92c",
+      storageBucket: "truth-dare-5a92c.firebasestorage.app",
+      messagingSenderId: "299104332770",
+      appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+      measurementId: "G-NER090QMCZ"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    document.getElementById("quiz-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const q1 = document.querySelector('input[name="q1"]:checked').value;
+      const q2 = document.querySelector('input[name="q2"]:checked').value;
+
+      const quizId = database.ref("quizzes").push().key;
+
+      const data = {
+        quizId,
+        name,
+        answers: {
+          q1,
+          q2
+        }
+      };
+
+      database.ref("quizzes/" + quizId).set(data)
+        .then(() => {
+          alert("Quiz saved successfully!");
+          document.getElementById("quiz-form").reset();
+        })
+        .catch((error) => {
+          alert("Error saving quiz: " + error.message);
+        });
+    });
+  </script>
 </body>
 </html>
