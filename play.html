@@ -5,101 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Play Friendship Quiz</title>
     <script type="module">
-        // Import the required functions from Firebase Modular SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
-            authDomain: "truth-dare-5a92c.firebaseapp.com",
-            projectId: "truth-dare-5a92c",
-            storageBucket: "truth-dare-5a92c.firebasestorage.app",
-            messagingSenderId: "299104332770",
-            appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
-            measurementId: "G-NER090QMCZ"
-        };
+      // Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+        authDomain: "truth-dare-5a92c.firebaseapp.com",
+        projectId: "truth-dare-5a92c",
+        storageBucket: "truth-dare-5a92c.firebasestorage.app",
+        messagingSenderId: "299104332770",
+        appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+        measurementId: "G-NER090QMCZ"
+      };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
 
-        // Get quiz ID from the URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const quizId = urlParams.get('id');
-        let quizData = {};
+      // Get quizId from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const quizId = urlParams.get('quizId');
 
-        // Fetch quiz data from Firebase and display the questions
+      // Sample answers
+      let quizData = {};
+
+      // Fetch quiz data from Firebase
+      function fetchQuizData() {
         get(ref(database, 'quizzes/' + quizId)).then((snapshot) => {
-            if (snapshot.exists()) {
-                quizData = snapshot.val();
-                const quizContent = document.getElementById("quizContent");
+          if (snapshot.exists()) {
+            quizData = snapshot.val();
+            renderQuiz(quizData);
+          }
+        });
+      }
 
-                for (let questionKey in quizData) {
-                    const question = quizData[questionKey].question;
-                    const options = quizData[questionKey].options;
-                    quizContent.innerHTML += `
-                        <div class="question-section">
-                            <label>${question}</label><br>
-                            <input type="radio" name="${questionKey}" value="${options[0]}" required> ${options[0]}<br>
-                            <input type="radio" name="${questionKey}" value="${options[1]}"> ${options[1]}<br>
-                        </div>
-                    `;
-                }
-            } else {
-                alert("Quiz not found.");
+      // Render quiz for the friend
+      function renderQuiz(quizData) {
+        const container = document.getElementById('quiz-container');
+        quizData.questions.forEach((question, index) => {
+          const questionElement = document.createElement('div');
+          questionElement.classList.add('question');
+          const questionText = document.createElement('p');
+          questionText.textContent = question.text;
+          questionElement.appendChild(questionText);
+
+          question.options.forEach(option => {
+            const optionLabel = document.createElement('label');
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = `q${index}`;
+            input.value = option;
+            optionLabel.appendChild(input);
+            optionLabel.appendChild(document.createTextNode(option));
+            questionElement.appendChild(optionLabel);
+          });
+
+          container.appendChild(questionElement);
+        });
+      }
+
+      // Compare and show results
+      function submitQuiz() {
+        const answers = {};
+        let correctCount = 0;
+        quizData.questions.forEach((question, index) => {
+          const selectedOption = document.querySelector(`input[name="q${index}"]:checked`);
+          if (selectedOption) {
+            answers[question.id] = selectedOption.value;
+            if (selectedOption.value === quizData.answers[question.id]) {
+              correctCount++;
             }
-        }).catch((error) => {
-            console.error("Error fetching quiz: ", error);
+          }
         });
 
-        document.getElementById("submitQuizBtn").addEventListener("click", function() {
-            const responses = {};
-            let allAnswered = true;
-
-            for (let questionKey in quizData) {
-                const answer = document.querySelector(`input[name="${questionKey}"]:checked`);
-                if (answer) {
-                    responses[questionKey] = answer.value;
-                } else {
-                    allAnswered = false;
-                }
-            }
-
-            if (allAnswered) {
-                // Save the responses to Firebase
-                const responseId = ref(database, 'responses').push().key;
-                set(ref(database, 'responses/' + responseId), {
-                    quizId: quizId,
-                    responses: responses
-                }).then(() => {
-                    alert("Your answers have been submitted.");
-                }).catch((error) => {
-                    console.error("Error submitting answers: ", error);
-                });
-            } else {
-                alert("Please answer all the questions.");
-            }
+        // Save friend's answers and show results
+        const resultId = push(ref(database, 'responses')).key;
+        set(ref(database, 'responses/' + resultId), {
+          quizId: quizId,
+          answers: answers,
+          correctCount: correctCount
         });
+
+        alert(`You got ${correctCount} out of ${quizData.questions.length} correct!`);
+      }
+
+      // Fetch quiz data when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        fetchQuizData();
+      });
     </script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; color: #333; }
-        .question-section { margin-bottom: 20px; }
-        label { font-weight: bold; }
-        .button { padding: 10px 20px; background-color: #007bff; color: white; border: none; width: 100%; font-size: 16px; cursor: pointer; }
-        .button:hover { background-color: #0056b3; }
-    </style>
 </head>
 <body>
-
-<div class="container">
     <h1>Friendship Quiz</h1>
-    
-    <div class="question-section" id="quizContent"></div>
-    <button id="submitQuizBtn" class="button">Submit Answers</button>
-</div>
-
+    <div id="quiz-container"></div>
+    <button onclick="submitQuiz()">Submit Quiz</button>
 </body>
 </html>
