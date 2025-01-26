@@ -242,16 +242,23 @@
         const responseData = snapshot.val();
         if (responseData) {
           document.getElementById("results").style.display = "block";
-          document.getElementById("result-answers").innerHTML = `
+          const correctAnswers = questions.map(q => q.correctAnswer);
+          let responseHTML = `
             <h3>User: ${responseData.userName}</h3>
             <h4>Score: ${responseData.score}</h4>
             <h4>Answers:</h4>
             <ul>
-              ${responseData.answers.map((answer, index) => 
-                `<li>Q${answer.questionId}: ${answer.selectedAnswer}</li>`
-              ).join('')}
-            </ul>
           `;
+
+          responseData.answers.forEach((answer, index) => {
+            const isCorrect = answer.selectedAnswer === correctAnswers[index] ? "Correct" : "Incorrect";
+            responseHTML += `
+              <li>Q${answer.questionId}: ${answer.selectedAnswer} (${isCorrect})</li>
+            `;
+          });
+
+          responseHTML += '</ul>';
+          document.getElementById("result-answers").innerHTML = responseHTML;
         }
       });
     }
