@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendship Quiz - Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; }
+        .button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Friendship Quiz Results</h1>
+
+    <div id="resultsContent"></div>
+    <button class="button" onclick="window.history.back();">Back to Quiz</button>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const resultId = urlParams.get('resultsid');
+    const friendName = urlParams.get('friend');
+    const id = urlParams.get('id');
+    const user = urlParams.get('user');
+
+    const answers = JSON.parse(localStorage.getItem(id));
+    const resultsContent = document.getElementById('resultsContent');
+    
+    let score = 0;
+    let totalQuestions = 9;
+
+    resultsContent.innerHTML += `<h3>Quiz taken by: ${friendName}</h3>`;
+
+    for (let i = 1; i <= totalQuestions; i++) {
+        const selectedAnswer = document.querySelector(`input[name="question${i}"]:checked`)?.value;
+        const correctAnswer = answers[`question${i}`];
+        
+        if (selectedAnswer === correctAnswer) {
+            score++;
+            resultsContent.innerHTML += `<p>Question ${i}: <strong>Correct</strong></p>`;
+        } else {
+            resultsContent.innerHTML += `<p>Question ${i}: <strong>Incorrect</strong></p>`;
+        }
+    }
+
+    resultsContent.innerHTML += `<h2>Total Score: ${score} out of ${totalQuestions}</h2>`;
+
+</script>
+
+</body>
+</html>
