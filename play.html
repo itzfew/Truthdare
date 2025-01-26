@@ -27,11 +27,12 @@
         // Get quiz ID from the URL
         const urlParams = new URLSearchParams(window.location.search);
         const quizId = urlParams.get('id');
+        let quizData = {};
 
         // Fetch quiz data from Firebase and display the questions
         get(ref(database, 'quizzes/' + quizId)).then((snapshot) => {
             if (snapshot.exists()) {
-                const quizData = snapshot.val();
+                quizData = snapshot.val();
                 const quizContent = document.getElementById("quizContent");
 
                 for (let questionKey in quizData) {
@@ -56,7 +57,6 @@
             const responses = {};
             let allAnswered = true;
 
-            const quizContent = document.getElementById("quizContent");
             for (let questionKey in quizData) {
                 const answer = document.querySelector(`input[name="${questionKey}"]:checked`);
                 if (answer) {
