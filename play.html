@@ -24,40 +24,43 @@
 
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const user = urlParams.get('user');
     const id = urlParams.get('id');
 
     const answers = JSON.parse(localStorage.getItem(id));
-
     const quizContent = document.getElementById('quizContent');
     let friendAnswers = {};
-
+    
     for (let i = 1; i <= 9; i++) {
         const question = `question${i}`;
         const answer = answers[question];
-
+        
         quizContent.innerHTML += `
             <div class="question">
                 <label for="${question}">Your answer to "${question}" was:</label>
                 <p>${answer}</p>
-                <label for="${question}_friend">What do you think your friend would answer?</label>
-                <input type="text" id="${question}_friend">
+                <label for="${question}_friend">What do you think your friend would answer?</label><br>
+                <input type="radio" name="${question}" value="Red" id="${question}_option1" required> Red
+                <input type="radio" name="${question}" value="Blue" id="${question}_option2"> Blue
             </div>
         `;
     }
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.style.display = 'block';
+
     submitBtn.addEventListener('click', function() {
+        let score = 0;
+
         for (let i = 1; i <= 9; i++) {
-            const friendAnswer = document.getElementById(`question${i}_friend`).value;
-            friendAnswers[`question${i}`] = friendAnswer;
+            const selectedAnswer = document.querySelector(`input[name="question${i}"]:checked`).value;
+            const correctAnswer = answers[`question${i}`];
+
+            if (selectedAnswer === correctAnswer) {
+                score++;
+            }
         }
 
-        const friendName = prompt("Enter your friend's name:");
-        localStorage.setItem(id + '_friend', JSON.stringify(friendAnswers));
-
-        window.location.href = `/play.html?user=${user}&friend=${friendName}&id=${id}`;
+        alert(`Your score: ${score} out of 9`);
     });
 </script>
 
