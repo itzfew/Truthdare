@@ -1,55 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-        #quiz-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        input {
-            padding: 10px;
-            width: 100%;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        #results {
-            margin-top: 30px;
-        }
-        #results h2 {
-            text-align: center;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    .btn {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: white;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-    <div id="quiz-container">
+  <div id="quiz-container">
         <h1>Quiz App</h1>
         <div id="questions"></div>
         <input type="text" id="user-name" placeholder="Enter your name" />
@@ -64,62 +64,121 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js"></script>
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
-            authDomain: "truth-dare-5a92c.firebaseapp.com",
-            databaseURL: "https://truth-dare-5a92c-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "truth-dare-5a92c",
-            storageBucket: "truth-dare-5a92c.firebasestorage.app",
-            messagingSenderId: "299104332770",
-            appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
-            measurementId: "G-NER090QMCZ"
-        };
+    
+  <script>
+    // Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+    authDomain: "truth-dare-5a92c.firebaseapp.com",
+    databaseURL: "https://truth-dare-5a92c-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "truth-dare-5a92c",
+    storageBucket: "truth-dare-5a92c.firebasestorage.app",
+    messagingSenderId: "299104332770",
+    appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+    measurementId: "G-NER090QMCZ"
+};
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-        // Sample Questions
-        const questions = [
-            {
-                id: 1,
-                question: "What is 2 + 2?",
-                options: ["3", "4", "5", "6"],
-                correctAnswer: "4"
-            },
-            {
-                id: 2,
-                question: "What is the capital of France?",
-                options: ["Paris", "Berlin", "Madrid", "Rome"],
-                correctAnswer: "Paris"
-            }
-        ];
+// Sample Questions
+const questions = [
+    {
+        id: 1,
+        question: "What is 2 + 2?",
+        options: ["3", "4", "5", "6"],
+        correctAnswer: "4"
+    },
+    {
+        id: 2,
+        question: "What is the capital of France?",
+        options: ["Paris", "Berlin", "Madrid", "Rome"],
+        correctAnswer: "Paris"
+    }
+];
 
-        // Variables
-        let quizId = null;
-        let userName = null;
+// Variables
+let quizId = null;
+let userName = null;
 
-        // Load quiz based on URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const quizIdParam = urlParams.get('id');
-        const userNameParam = urlParams.get('user');
+// Load quiz based on URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+const quizIdParam = urlParams.get('id');
+const userNameParam = urlParams.get('user');
 
-        // Initialize Quiz if URL parameters exist
-        if (quizIdParam && userNameParam) {
-            quizId = quizIdParam;
-            userName = userNameParam;
-            loadQuizFromDatabase(quizId, userName);
-        } else {
-            loadQuestions();
+// Initialize Quiz if URL parameters exist
+if (quizIdParam && userNameParam) {
+    quizId = quizIdParam;
+    userName = userNameParam;
+    loadQuizFromDatabase(quizId, userName);
+} else {
+    loadQuestions();
+}
+
+// Load Questions
+function loadQuestions() {
+    const questionsDiv = document.getElementById("questions");
+    questionsDiv.innerHTML = "";
+    questions.forEach((question, index) => {
+        const questionElement = document.createElement("div");
+        questionElement.classList.add("question");
+        questionElement.innerHTML = `
+            <p>${index + 1}. ${question.question}</p>
+            ${question.options.map(option => 
+                `<label><input type="radio" name="q${question.id}" value="${option}"> ${option}</label><br>`
+            ).join('')}
+        `;
+        questionsDiv.appendChild(questionElement);
+    });
+
+    document.getElementById("generate-btn").addEventListener("click", () => {
+        userName = document.getElementById("user-name").value;
+        generateQuizIdAndSave();
+    });
+}
+
+// Generate quiz ID and save answers
+function generateQuizIdAndSave() {
+    quizId = 'quiz-' + new Date().getTime();
+    const selectedAnswers = getSelectedAnswers();
+
+    // Save quiz data to Firebase
+    const quizData = {
+        quizId: quizId,
+        userName: userName,
+        questions: selectedAnswers
+    };
+
+    db.ref('quizzes/' + quizId).set(quizData);
+    
+    document.getElementById("generate-btn").style.display = "none";
+    document.getElementById("submit-btn").style.display = "inline-block";
+}
+
+// Get selected answers from the quiz form
+function getSelectedAnswers() {
+    const answers = [];
+    questions.forEach(question => {
+        const selectedOption = document.querySelector(`input[name="q${question.id}"]:checked`);
+        if (selectedOption) {
+            answers.push({
+                questionId: question.id,
+                selectedAnswer: selectedOption.value
+            });
         }
+    });
+    return answers;
+}
 
-        // Load Questions
-        function loadQuestions() {
-            const questionsDiv = document.getElementById("questions");
-            questionsDiv.innerHTML = "";
-            questions.forEach((question, index) => {
+// Load quiz from Firebase
+function loadQuizFromDatabase(quizId, userName) {
+    db.ref('quizzes/' + quizId).once('value', (snapshot) => {
+        const quizData = snapshot.val();
+        if (quizData) {
+            document.getElementById("questions").innerHTML = "";
+            quizData.questions.forEach((questionData, index) => {
+                const question = questions.find(q => q.id === questionData.questionId);
                 const questionElement = document.createElement("div");
                 questionElement.classList.add("question");
                 questionElement.innerHTML = `
@@ -128,100 +187,44 @@
                         `<label><input type="radio" name="q${question.id}" value="${option}"> ${option}</label><br>`
                     ).join('')}
                 `;
-                questionsDiv.appendChild(questionElement);
+                document.getElementById("questions").appendChild(questionElement);
             });
 
-            document.getElementById("generate-btn").addEventListener("click", () => {
-                userName = document.getElementById("user-name").value;
-                generateQuizIdAndSave();
-            });
-        }
-
-        // Generate quiz ID and save answers
-        function generateQuizIdAndSave() {
-            quizId = 'quiz-' + new Date().getTime();
-            const selectedAnswers = getSelectedAnswers();
-
-            // Save quiz data to Firebase
-            const quizData = {
-                quizId: quizId,
-                userName: userName,
-                questions: selectedAnswers
-            };
-
-            db.ref('quizzes/' + quizId).set(quizData);
-            
-            document.getElementById("generate-btn").style.display = "none";
             document.getElementById("submit-btn").style.display = "inline-block";
         }
+    });
+}
 
-        // Get selected answers from the quiz form
-        function getSelectedAnswers() {
-            const answers = [];
-            questions.forEach(question => {
-                const selectedOption = document.querySelector(`input[name="q${question.id}"]:checked`);
-                if (selectedOption) {
-                    answers.push({
-                        questionId: question.id,
-                        selectedAnswer: selectedOption.value
-                    });
-                }
-            });
-            return answers;
+
+// Handle quiz submission
+document.getElementById("submit-btn").addEventListener("click", () => {
+    const selectedAnswers = getSelectedAnswers();
+    const correctAnswers = questions.map(q => q.correctAnswer);
+
+    let score = 0;
+    selectedAnswers.forEach((answer, index) => {
+        if (answer.selectedAnswer === correctAnswers[index]) {
+            score++;
         }
+    });
 
-        // Load quiz from Firebase
-        function loadQuizFromDatabase(quizId, userName) {
-            db.ref('quizzes/' + quizId).once('value', (snapshot) => {
-                const quizData = snapshot.val();
-                if (quizData) {
-                    document.getElementById("questions").innerHTML = "";
-                    quizData.questions.forEach((questionData, index) => {
-                        const question = questions.find(q => q.id === questionData.questionId);
-                        const questionElement = document.createElement("div");
-                        questionElement.classList.add("question");
-                        questionElement.innerHTML = `
-                            <p>${index + 1}. ${question.question}</p>
-                            ${question.options.map(option => 
-                                `<label><input type="radio" name="q${question.id}" value="${option}" ${option === questionData.selectedAnswer ? "checked" : ""}> ${option}</label><br>`
-                            ).join('')}
-                        `;
-                        document.getElementById("questions").appendChild(questionElement);
-                    });
+    // Save responses
+    const responses = {
+        quizId: quizId,
+        userName: userName,
+        answers: selectedAnswers,
+        score: score
+    };
 
-                    document.getElementById("submit-btn").style.display = "inline-block";
-                }
-            });
-        }
+    const responseId = 'response-' + new Date().getTime();
+    db.ref('responses/' + quizId + '/' + responseId).set(responses);
 
-        // Handle quiz submission
-        document.getElementById("submit-btn").addEventListener("click", () => {
-            const selectedAnswers = getSelectedAnswers();
-            const correctAnswers = questions.map(q => q.correctAnswer);
+    // Display result
+    document.getElementById("quiz-container").style.display = "none";
+    document.getElementById("results").style.display = "block";
+    document.getElementById("result-answers").innerHTML = `You scored ${score} out of ${questions.length}`;
+});
 
-            let score = 0;
-            selectedAnswers.forEach((answer, index) => {
-                if (answer.selectedAnswer === correctAnswers[index]) {
-                    score++;
-                }
-            });
-
-            // Save responses
-            const responses = {
-                quizId: quizId,
-                userName: userName,
-                answers: selectedAnswers,
-                score: score
-            };
-
-            const responseId = 'response-' + new Date().getTime();
-            db.ref('responses/' + quizId + '/' + responseId).set(responses);
-
-            // Display result
-            document.getElementById("quiz-container").style.display = "none";
-            document.getElementById("results").style.display = "block";
-            document.getElementById("result-answers").innerHTML = `You scored ${score} out of ${questions.length}`;
-        });
-    </script>
+  </script>
 </body>
 </html>
