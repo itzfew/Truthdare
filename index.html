@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Your Friendship Quiz</title>
+    <title>Friendship Quiz - Create</title>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
@@ -17,84 +19,72 @@
 <body>
 
 <div class="container">
-    <h1>Create Your Friendship Quiz</h1>
-    <form id="quizForm">
+    <h1>Create Friendship Quiz</h1>
+    
+    <!-- Questions Form -->
+    <div id="quizContent">
         <div class="question">
-            <label for="question1">What's your favorite color?</label><br>
-            <input type="radio" name="question1" value="Red" id="q1_option1" required> Red
-            <input type="radio" name="question1" value="Blue" id="q1_option2"> Blue
+            <label for="question1">Question 1:</label><br>
+            <input type="text" id="question1" placeholder="Enter question 1" required><br>
+            <label for="option1_1">Option 1:</label><br>
+            <input type="text" id="option1_1" placeholder="Enter option 1" required><br>
+            <label for="option1_2">Option 2:</label><br>
+            <input type="text" id="option1_2" placeholder="Enter option 2" required><br>
         </div>
+        <!-- Add more questions as needed -->
         <div class="question">
-            <label for="question2">What's your favorite food?</label><br>
-            <input type="radio" name="question2" value="Pizza" id="q2_option1" required> Pizza
-            <input type="radio" name="question2" value="Burger" id="q2_option2"> Burger
+            <label for="question2">Question 2:</label><br>
+            <input type="text" id="question2" placeholder="Enter question 2" required><br>
+            <label for="option2_1">Option 1:</label><br>
+            <input type="text" id="option2_1" placeholder="Enter option 1" required><br>
+            <label for="option2_2">Option 2:</label><br>
+            <input type="text" id="option2_2" placeholder="Enter option 2" required><br>
         </div>
-        <div class="question">
-            <label for="question3">What's your dream vacation destination?</label><br>
-            <input type="radio" name="question3" value="Hawaii" id="q3_option1" required> Hawaii
-            <input type="radio" name="question3" value="Paris" id="q3_option2"> Paris
-        </div>
-        <div class="question">
-            <label for="question4">What's your favorite hobby?</label><br>
-            <input type="radio" name="question4" value="Reading" id="q4_option1" required> Reading
-            <input type="radio" name="question4" value="Traveling" id="q4_option2"> Traveling
-        </div>
-        <div class="question">
-            <label for="question5">What's your pet's name?</label><br>
-            <input type="radio" name="question5" value="Max" id="q5_option1" required> Max
-            <input type="radio" name="question5" value="Bella" id="q5_option2"> Bella
-        </div>
-        <div class="question">
-            <label for="question6">What's your favorite movie?</label><br>
-            <input type="radio" name="question6" value="Inception" id="q6_option1" required> Inception
-            <input type="radio" name="question6" value="Titanic" id="q6_option2"> Titanic
-        </div>
-        <div class="question">
-            <label for="question7">What's your favorite sport?</label><br>
-            <input type="radio" name="question7" value="Football" id="q7_option1" required> Football
-            <input type="radio" name="question7" value="Basketball" id="q7_option2"> Basketball
-        </div>
-        <div class="question">
-            <label for="question8">What's your favorite book?</label><br>
-            <input type="radio" name="question8" value="1984" id="q8_option1" required> 1984
-            <input type="radio" name="question8" value="Harry Potter" id="q8_option2"> Harry Potter
-        </div>
-        <div class="question">
-            <label for="question9">What's your favorite music genre?</label><br>
-            <input type="radio" name="question9" value="Rock" id="q9_option1" required> Rock
-            <input type="radio" name="question9" value="Pop" id="q9_option2"> Pop
-        </div>
-        <button type="submit" class="button">Generate My Quiz Link</button>
-    </form>
-
-    <div id="quizLinkContainer" style="display: none; margin-top: 20px;">
-        <h3>Share Your Quiz Link</h3>
-        <input type="text" id="quizLink" readonly style="width: 100%; padding: 10px; margin-top: 10px;">
     </div>
+
+    <button id="generateQuizBtn" class="button">Generate Quiz Link</button>
 </div>
 
 <script>
-    document.getElementById('quizForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+    // Initialize Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+        authDomain: "truth-dare-5a92c.firebaseapp.com",
+        projectId: "truth-dare-5a92c",
+        storageBucket: "truth-dare-5a92c.firebasestorage.app",
+        messagingSenderId: "299104332770",
+        appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+        measurementId: "G-NER090QMCZ"
+    };
+    
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database(app);
 
-        const answers = {
-            question1: document.querySelector('input[name="question1"]:checked').value,
-            question2: document.querySelector('input[name="question2"]:checked').value,
-            question3: document.querySelector('input[name="question3"]:checked').value,
-            question4: document.querySelector('input[name="question4"]:checked').value,
-            question5: document.querySelector('input[name="question5"]:checked').value,
-            question6: document.querySelector('input[name="question6"]:checked').value,
-            question7: document.querySelector('input[name="question7"]:checked').value,
-            question8: document.querySelector('input[name="question8"]:checked').value,
-            question9: document.querySelector('input[name="question9"]:checked').value
+    document.getElementById('generateQuizBtn').addEventListener('click', () => {
+        // Get the quiz questions and options
+        const quizData = {
+            question1: {
+                question: document.getElementById('question1').value,
+                options: [document.getElementById('option1_1').value, document.getElementById('option1_2').value]
+            },
+            question2: {
+                question: document.getElementById('question2').value,
+                options: [document.getElementById('option2_1').value, document.getElementById('option2_2').value]
+            },
+            // Add more questions as needed
         };
 
-        const id = new Date().getTime();
-        localStorage.setItem(id, JSON.stringify(answers));
+        // Generate a unique quiz ID
+        const quizId = database.ref().child('quizzes').push().key;
 
-        const quizLink = window.location.origin + '/play.html?user=me&id=' + id;
-        document.getElementById('quizLink').value = quizLink;
-        document.getElementById('quizLinkContainer').style.display = 'block';
+        // Store the quiz in Firebase
+        database.ref('quizzes/' + quizId).set(quizData).then(() => {
+            // Generate the quiz link to share with your friend
+            const quizLink = `play.html?id=${quizId}`;
+            alert('Quiz generated! Share this link: ' + quizLink);
+        }).catch((error) => {
+            console.error('Error creating quiz: ', error);
+        });
     });
 </script>
 
