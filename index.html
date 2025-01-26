@@ -4,85 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Friendship Quiz</title>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+    <script type="module">
+        // Import the required functions from Firebase Modular SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+            authDomain: "truth-dare-5a92c.firebaseapp.com",
+            projectId: "truth-dare-5a92c",
+            storageBucket: "truth-dare-5a92c.firebasestorage.app",
+            messagingSenderId: "299104332770",
+            appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+            measurementId: "G-NER090QMCZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        document.getElementById("generateLinkBtn").addEventListener("click", function() {
+            const quizData = {
+                question1: {
+                    question: document.getElementById("question1").value,
+                    options: [document.getElementById("option1_1").value, document.getElementById("option1_2").value]
+                },
+                question2: {
+                    question: document.getElementById("question2").value,
+                    options: [document.getElementById("option2_1").value, document.getElementById("option2_2").value]
+                }
+            };
+
+            const quizId = ref(database, 'quizzes').push().key;
+
+            set(ref(database, 'quizzes/' + quizId), quizData).then(() => {
+                const quizLink = `play.html?id=${quizId}`;
+                document.getElementById("quizLinkContainer").innerHTML = `<strong>Share this quiz link: </strong><a href="${quizLink}" target="_blank">${quizLink}</a>`;
+            }).catch((error) => {
+                console.error("Error saving quiz: ", error);
+            });
+        });
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
-        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; color: #333; }
+        .question-section { margin-bottom: 20px; }
         label { font-weight: bold; }
-        .question { margin-bottom: 20px; }
-        .button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .button { padding: 10px 20px; background-color: #007bff; color: white; border: none; width: 100%; font-size: 16px; cursor: pointer; }
         .button:hover { background-color: #0056b3; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Create Friendship Quiz</h1>
-
-    <!-- Question Form -->
-    <div id="quizContent">
-        <div class="question">
-            <label for="question1">Question 1:</label><br>
-            <input type="text" id="question1" placeholder="Enter question 1" required><br>
-            <label for="option1_1">Option 1:</label><br>
-            <input type="text" id="option1_1" placeholder="Enter option 1" required><br>
-            <label for="option1_2">Option 2:</label><br>
-            <input type="text" id="option1_2" placeholder="Enter option 2" required><br>
-        </div>
-        <!-- Add more questions as needed -->
-        <div class="question">
-            <label for="question2">Question 2:</label><br>
-            <input type="text" id="question2" placeholder="Enter question 2" required><br>
-            <label for="option2_1">Option 1:</label><br>
-            <input type="text" id="option2_1" placeholder="Enter option 1" required><br>
-            <label for="option2_2">Option 2:</label><br>
-            <input type="text" id="option2_2" placeholder="Enter option 2" required><br>
-        </div>
+    <h1>Create Your Friendship Quiz</h1>
+    
+    <div class="question-section">
+        <label for="question1">Question 1</label>
+        <input type="text" id="question1" placeholder="Enter question" required><br>
+        <input type="text" id="option1_1" placeholder="Option 1" required><br>
+        <input type="text" id="option1_2" placeholder="Option 2" required><br>
+    </div>
+    
+    <div class="question-section">
+        <label for="question2">Question 2</label>
+        <input type="text" id="question2" placeholder="Enter question" required><br>
+        <input type="text" id="option2_1" placeholder="Option 1" required><br>
+        <input type="text" id="option2_2" placeholder="Option 2" required><br>
     </div>
 
-    <button id="generateQuizBtn" class="button">Generate Quiz Link</button>
+    <button id="generateLinkBtn" class="button">Generate Quiz Link</button>
+    <p id="quizLinkContainer"></p>
 </div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
-        authDomain: "truth-dare-5a92c.firebaseapp.com",
-        projectId: "truth-dare-5a92c",
-        storageBucket: "truth-dare-5a92c.firebasestorage.app",
-        messagingSenderId: "299104332770",
-        appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
-        measurementId: "G-NER090QMCZ"
-    };
-    
-    const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database(app);
-
-    document.getElementById('generateQuizBtn').addEventListener('click', () => {
-        const quizData = {
-            question1: {
-                question: document.getElementById('question1').value,
-                options: [document.getElementById('option1_1').value, document.getElementById('option1_2').value]
-            },
-            question2: {
-                question: document.getElementById('question2').value,
-                options: [document.getElementById('option2_1').value, document.getElementById('option2_2').value]
-            }
-        };
-
-        // Generate a unique quiz ID
-        const quizId = database.ref().child('quizzes').push().key;
-
-        // Save quiz data to Firebase
-        database.ref('quizzes/' + quizId).set(quizData).then(() => {
-            const quizLink = `play.html?id=${quizId}`;
-            alert('Quiz generated! Share this link with your friend: ' + quizLink);
-        }).catch((error) => {
-            console.error('Error creating quiz: ', error);
-        });
-    });
-</script>
 
 </body>
 </html>
