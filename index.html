@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Friendship Quiz</title>
+    <title>Play Friendship Quiz</title>
     <script type="module">
         // Import the required functions from Firebase Modular SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -24,26 +24,65 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        document.getElementById("generateLinkBtn").addEventListener("click", function() {
-            const quizData = {
-                question1: {
-                    question: document.getElementById("question1").value,
-                    options: [document.getElementById("option1_1").value, document.getElementById("option1_2").value]
-                },
-                question2: {
-                    question: document.getElementById("question2").value,
-                    options: [document.getElementById("option2_1").value, document.getElementById("option2_2").value]
+        // Get quiz ID from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('id');
+        let quizData = {};
+
+        // Fetch quiz data from Firebase and display the questions
+        get(ref(database, 'quizzes/' + quizId)).then((snapshot) => {
+            if (snapshot.exists()) {
+                quizData = snapshot.val();
+                const quizContent = document.getElementById("quizContent");
+
+                // Display questions dynamically
+                for (let questionKey in quizData) {
+                    const question = quizData[questionKey].question;
+                    const options = quizData[questionKey].options;
+                    quizContent.innerHTML += `
+                        <div class="question-section">
+                            <label>${question}</label><br>
+                            <input type="radio" name="${questionKey}" value="${options[0]}" required> ${options[0]}<br>
+                            <input type="radio" name="${questionKey}" value="${options[1]}"> ${options[1]}<br>
+                        </div>
+                    `;
                 }
-            };
+            } else {
+                alert("Quiz not found.");
+            }
+        }).catch((error) => {
+            console.error("Error fetching quiz: ", error);
+        });
 
-            const quizId = ref(database, 'quizzes').push().key;
+        // Handle the quiz submission
+        document.getElementById("submitQuizBtn").addEventListener("click", function() {
+            const responses = {};
+            let allAnswered = true;
 
-            set(ref(database, 'quizzes/' + quizId), quizData).then(() => {
-                const quizLink = `play.html?id=${quizId}`;
-                document.getElementById("quizLinkContainer").innerHTML = `<strong>Share this quiz link: </strong><a href="${quizLink}" target="_blank">${quizLink}</a>`;
-            }).catch((error) => {
-                console.error("Error saving quiz: ", error);
-            });
+            // Collect the answers from the user
+            for (let questionKey in quizData) {
+                const answer = document.querySelector(`input[name="${questionKey}"]:checked`);
+                if (answer) {
+                    responses[questionKey] = answer.value;
+                } else {
+                    allAnswered = false;
+                }
+            }
+
+            if (allAnswered) {
+                // Save the responses to Firebase
+                const responseId = ref(database, 'responses').push().key;
+                set(ref(database, 'responses/' + responseId), {
+                    quizId: quizId,
+                    responses: responses
+                }).then(() => {
+                    alert("Your answers have been submitted.");
+                }).catch((error) => {
+                    console.error("Error submitting answers: ", error);
+                });
+            } else {
+                alert("Please answer all the questions.");
+            }
         });
     </script>
     <style>
@@ -59,24 +98,10 @@
 <body>
 
 <div class="container">
-    <h1>Create Your Friendship Quiz</h1>
+    <h1>Friendship Quiz</h1>
     
-    <div class="question-section">
-        <label for="question1">Question 1</label>
-        <input type="text" id="question1" placeholder="Enter question" required><br>
-        <input type="text" id="option1_1" placeholder="Option 1" required><br>
-        <input type="text" id="option1_2" placeholder="Option 2" required><br>
-    </div>
-    
-    <div class="question-section">
-        <label for="question2">Question 2</label>
-        <input type="text" id="question2" placeholder="Enter question" required><br>
-        <input type="text" id="option2_1" placeholder="Option 1" required><br>
-        <input type="text" id="option2_2" placeholder="Option 2" required><br>
-    </div>
-
-    <button id="generateLinkBtn" class="button">Generate Quiz Link</button>
-    <p id="quizLinkContainer"></p>
+    <div class="question-section" id="quizContent"></div>
+    <button id="submitQuizBtn" class="button">Submit Answers</button>
 </div>
 
 </body>
