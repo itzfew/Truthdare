@@ -20,7 +20,6 @@
     <h1>Friendship Quiz - Results</h1>
 
     <div id="resultsContent"></div>
-    <button class="button" onclick="window.history.back();">Back to Quiz</button>
 </div>
 
 <script>
@@ -32,38 +31,34 @@
     const database = firebase.database();
     const resultsContent = document.getElementById('resultsContent');
 
-    // Fetch the quiz and friend's responses from Firebase
+    // Fetch quiz and friend's responses from Firebase
     database.ref('quizzes/' + quizId).once('value').then((quizSnapshot) => {
         const quizData = quizSnapshot.val();
 
         database.ref('responses/' + resultsId).once('value').then((responseSnapshot) => {
             const responseData = responseSnapshot.val();
-
-            resultsContent.innerHTML += `<h3>Quiz taken by: ${friendName}</h3>`;
+            resultsContent.innerHTML += `<h3>Results for: ${friendName}</h3>`;
 
             let score = 0;
             let totalQuestions = Object.keys(quizData).length;
 
             for (let questionKey in quizData) {
-                const correctAnswer = quizData[questionKey].correctAnswer; // Assuming correctAnswer is stored
+                const correctAnswer = quizData[questionKey].options[0];  // Assuming the first option is always the correct one
                 const userAnswer = responseData.responses[questionKey];
+                const result = userAnswer === correctAnswer ? "Correct" : "Wrong";
+
+                if (result === "Correct") score++;
 
                 resultsContent.innerHTML += `
-                    <p>${quizData[questionKey].question}</p>
-                    <p>Your answer: ${userAnswer} | Correct answer: ${correctAnswer}</p>
+                    <p><strong>${quizData[questionKey].question}</strong></p>
+                    <p>Your answer: ${userAnswer}</p>
+                    <p>Correct answer: ${correctAnswer}</p>
+                    <p>Result: ${result}</p><hr>
                 `;
-
-                if (userAnswer === correctAnswer) {
-                    score++;
-                }
             }
 
-            resultsContent.innerHTML += `<h2>Your Score: ${score} / ${totalQuestions}</h2>`;
-        }).catch((error) => {
-            console.error('Error fetching response data: ', error);
+            resultsContent.innerHTML += `<h2>Total Score: ${score} / ${totalQuestions}</h2>`;
         });
-    }).catch((error) => {
-        console.error('Error fetching quiz data: ', error);
     });
 </script>
 
