@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friendship Quiz - Create Your Quiz</title>
+    <title>Create Your Friendship Quiz</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
@@ -20,40 +20,49 @@
     <h1>Create Your Friendship Quiz</h1>
     <form id="quizForm">
         <div class="question">
-            <label for="question1">What's your favorite color?</label>
-            <input type="text" id="question1" required>
+            <label for="question1">What's your favorite color?</label><br>
+            <input type="radio" name="question1" value="Red" id="q1_option1" required> Red
+            <input type="radio" name="question1" value="Blue" id="q1_option2"> Blue
         </div>
         <div class="question">
-            <label for="question2">What's your favorite food?</label>
-            <input type="text" id="question2" required>
+            <label for="question2">What's your favorite food?</label><br>
+            <input type="radio" name="question2" value="Pizza" id="q2_option1" required> Pizza
+            <input type="radio" name="question2" value="Burger" id="q2_option2"> Burger
         </div>
         <div class="question">
-            <label for="question3">What's your dream vacation destination?</label>
-            <input type="text" id="question3" required>
+            <label for="question3">What's your dream vacation destination?</label><br>
+            <input type="radio" name="question3" value="Hawaii" id="q3_option1" required> Hawaii
+            <input type="radio" name="question3" value="Paris" id="q3_option2"> Paris
         </div>
         <div class="question">
-            <label for="question4">What's your favorite hobby?</label>
-            <input type="text" id="question4" required>
+            <label for="question4">What's your favorite hobby?</label><br>
+            <input type="radio" name="question4" value="Reading" id="q4_option1" required> Reading
+            <input type="radio" name="question4" value="Traveling" id="q4_option2"> Traveling
         </div>
         <div class="question">
-            <label for="question5">What's your pet's name?</label>
-            <input type="text" id="question5" required>
+            <label for="question5">What's your pet's name?</label><br>
+            <input type="radio" name="question5" value="Max" id="q5_option1" required> Max
+            <input type="radio" name="question5" value="Bella" id="q5_option2"> Bella
         </div>
         <div class="question">
-            <label for="question6">What's your favorite movie?</label>
-            <input type="text" id="question6" required>
+            <label for="question6">What's your favorite movie?</label><br>
+            <input type="radio" name="question6" value="Inception" id="q6_option1" required> Inception
+            <input type="radio" name="question6" value="Titanic" id="q6_option2"> Titanic
         </div>
         <div class="question">
-            <label for="question7">What's your favorite sport?</label>
-            <input type="text" id="question7" required>
+            <label for="question7">What's your favorite sport?</label><br>
+            <input type="radio" name="question7" value="Football" id="q7_option1" required> Football
+            <input type="radio" name="question7" value="Basketball" id="q7_option2"> Basketball
         </div>
         <div class="question">
-            <label for="question8">What's your favorite book?</label>
-            <input type="text" id="question8" required>
+            <label for="question8">What's your favorite book?</label><br>
+            <input type="radio" name="question8" value="1984" id="q8_option1" required> 1984
+            <input type="radio" name="question8" value="Harry Potter" id="q8_option2"> Harry Potter
         </div>
         <div class="question">
-            <label for="question9">What's your favorite music genre?</label>
-            <input type="text" id="question9" required>
+            <label for="question9">What's your favorite music genre?</label><br>
+            <input type="radio" name="question9" value="Rock" id="q9_option1" required> Rock
+            <input type="radio" name="question9" value="Pop" id="q9_option2"> Pop
         </div>
         <button type="submit" class="button">Generate My Quiz Link</button>
     </form>
@@ -69,15 +78,15 @@
         event.preventDefault();
 
         const answers = {
-            question1: document.getElementById('question1').value,
-            question2: document.getElementById('question2').value,
-            question3: document.getElementById('question3').value,
-            question4: document.getElementById('question4').value,
-            question5: document.getElementById('question5').value,
-            question6: document.getElementById('question6').value,
-            question7: document.getElementById('question7').value,
-            question8: document.getElementById('question8').value,
-            question9: document.getElementById('question9').value
+            question1: document.querySelector('input[name="question1"]:checked').value,
+            question2: document.querySelector('input[name="question2"]:checked').value,
+            question3: document.querySelector('input[name="question3"]:checked').value,
+            question4: document.querySelector('input[name="question4"]:checked').value,
+            question5: document.querySelector('input[name="question5"]:checked').value,
+            question6: document.querySelector('input[name="question6"]:checked').value,
+            question7: document.querySelector('input[name="question7"]:checked').value,
+            question8: document.querySelector('input[name="question8"]:checked').value,
+            question9: document.querySelector('input[name="question9"]:checked').value
         };
 
         const id = new Date().getTime();
