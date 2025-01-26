@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Friendship Quiz - Results</title>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
@@ -15,7 +17,7 @@
 <body>
 
 <div class="container">
-    <h1>Friendship Quiz Results</h1>
+    <h1>Friendship Quiz - Results</h1>
 
     <div id="resultsContent"></div>
     <button class="button" onclick="window.history.back();">Back to Quiz</button>
@@ -23,33 +25,46 @@
 
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const resultId = urlParams.get('resultsid');
+    const resultsId = urlParams.get('resultsid');
     const friendName = urlParams.get('friend');
-    const id = urlParams.get('id');
-    const user = urlParams.get('user');
+    const quizId = urlParams.get('id');
 
-    const answers = JSON.parse(localStorage.getItem(id));
+    const database = firebase.database();
     const resultsContent = document.getElementById('resultsContent');
-    
-    let score = 0;
-    let totalQuestions = 9;
 
-    resultsContent.innerHTML += `<h3>Quiz taken by: ${friendName}</h3>`;
+    // Fetch the quiz and friend's responses from Firebase
+    database.ref('quizzes/' + quizId).once('value').then((quizSnapshot) => {
+        const quizData = quizSnapshot.val();
 
-    for (let i = 1; i <= totalQuestions; i++) {
-        const selectedAnswer = document.querySelector(`input[name="question${i}"]:checked`)?.value;
-        const correctAnswer = answers[`question${i}`];
-        
-        if (selectedAnswer === correctAnswer) {
-            score++;
-            resultsContent.innerHTML += `<p>Question ${i}: <strong>Correct</strong></p>`;
-        } else {
-            resultsContent.innerHTML += `<p>Question ${i}: <strong>Incorrect</strong></p>`;
-        }
-    }
+        database.ref('responses/' + resultsId).once('value').then((responseSnapshot) => {
+            const responseData = responseSnapshot.val();
 
-    resultsContent.innerHTML += `<h2>Total Score: ${score} out of ${totalQuestions}</h2>`;
+            resultsContent.innerHTML += `<h3>Quiz taken by: ${friendName}</h3>`;
 
+            let score = 0;
+            let totalQuestions = Object.keys(quizData).length;
+
+            for (let questionKey in quizData) {
+                const correctAnswer = quizData[questionKey].correctAnswer; // Assuming correctAnswer is stored
+                const userAnswer = responseData.responses[questionKey];
+
+                resultsContent.innerHTML += `
+                    <p>${quizData[questionKey].question}</p>
+                    <p>Your answer: ${userAnswer} | Correct answer: ${correctAnswer}</p>
+                `;
+
+                if (userAnswer === correctAnswer) {
+                    score++;
+                }
+            }
+
+            resultsContent.innerHTML += `<h2>Your Score: ${score} / ${totalQuestions}</h2>`;
+        }).catch((error) => {
+            console.error('Error fetching response data: ', error);
+        });
+    }).catch((error) => {
+        console.error('Error fetching quiz data: ', error);
+    });
 </script>
 
 </body>
