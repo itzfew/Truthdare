@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendship Quiz - Create Your Quiz</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; }
+        label { font-weight: bold; }
+        .question { margin-bottom: 20px; }
+        .button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Create Your Friendship Quiz</h1>
+    <form id="quizForm">
+        <div class="question">
+            <label for="question1">What's your favorite color?</label>
+            <input type="text" id="question1" required>
+        </div>
+        <div class="question">
+            <label for="question2">What's your favorite food?</label>
+            <input type="text" id="question2" required>
+        </div>
+        <div class="question">
+            <label for="question3">What's your dream vacation destination?</label>
+            <input type="text" id="question3" required>
+        </div>
+        <div class="question">
+            <label for="question4">What's your favorite hobby?</label>
+            <input type="text" id="question4" required>
+        </div>
+        <div class="question">
+            <label for="question5">What's your pet's name?</label>
+            <input type="text" id="question5" required>
+        </div>
+        <div class="question">
+            <label for="question6">What's your favorite movie?</label>
+            <input type="text" id="question6" required>
+        </div>
+        <div class="question">
+            <label for="question7">What's your favorite sport?</label>
+            <input type="text" id="question7" required>
+        </div>
+        <div class="question">
+            <label for="question8">What's your favorite book?</label>
+            <input type="text" id="question8" required>
+        </div>
+        <div class="question">
+            <label for="question9">What's your favorite music genre?</label>
+            <input type="text" id="question9" required>
+        </div>
+        <button type="submit" class="button">Generate My Quiz Link</button>
+    </form>
+
+    <div id="quizLinkContainer" style="display: none; margin-top: 20px;">
+        <h3>Share Your Quiz Link</h3>
+        <input type="text" id="quizLink" readonly style="width: 100%; padding: 10px; margin-top: 10px;">
+    </div>
+</div>
+
+<script>
+    document.getElementById('quizForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const answers = {
+            question1: document.getElementById('question1').value,
+            question2: document.getElementById('question2').value,
+            question3: document.getElementById('question3').value,
+            question4: document.getElementById('question4').value,
+            question5: document.getElementById('question5').value,
+            question6: document.getElementById('question6').value,
+            question7: document.getElementById('question7').value,
+            question8: document.getElementById('question8').value,
+            question9: document.getElementById('question9').value
+        };
+
+        const id = new Date().getTime();
+        localStorage.setItem(id, JSON.stringify(answers));
+
+        const quizLink = window.location.origin + '/play.html?user=me&id=' + id;
+        document.getElementById('quizLink').value = quizLink;
+        document.getElementById('quizLinkContainer').style.display = 'block';
+    });
+</script>
+
+</body>
+</html>
