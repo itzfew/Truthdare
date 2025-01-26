@@ -67,9 +67,6 @@
     <div id="response-list"></div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js"></script>
-
   <script>
     // Firebase Configuration
     const firebaseConfig = {
@@ -219,9 +216,12 @@
         }
       });
 
-      // Save responses
+      // Generate a unique response ID
       responseId = 'response-' + new Date().getTime();
+
+      // Save responses along with the response ID, score, and user info
       const responses = {
+        responseId: responseId,
         quizId: quizId,
         userName: userName,
         answers: selectedAnswers,
