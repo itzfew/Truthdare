@@ -18,6 +18,13 @@
 
 <div class="container">
     <h1>Friendship Quiz</h1>
+
+    <!-- Friend's Name -->
+    <div class="question">
+        <label for="friendName">Enter Your Name:</label>
+        <input type="text" id="friendName" placeholder="Enter your name" required>
+    </div>
+
     <div id="quizContent"></div>
     <button id="submitBtn" class="button" style="display: none;">Submit</button>
 </div>
@@ -25,11 +32,12 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    const user = urlParams.get('user');
 
     const answers = JSON.parse(localStorage.getItem(id));
     const quizContent = document.getElementById('quizContent');
     let friendAnswers = {};
-    
+
     for (let i = 1; i <= 9; i++) {
         const question = `question${i}`;
         const answer = answers[question];
@@ -49,6 +57,13 @@
     submitBtn.style.display = 'block';
 
     submitBtn.addEventListener('click', function() {
+        const friendName = document.getElementById('friendName').value;
+
+        if (!friendName) {
+            alert("Please enter your name before submitting.");
+            return;
+        }
+
         let score = 0;
 
         for (let i = 1; i <= 9; i++) {
@@ -60,7 +75,9 @@
             }
         }
 
-        alert(`Your score: ${score} out of 9`);
+        const resultsId = new Date().getTime(); // Generate a unique results ID
+        const resultUrl = `play.html?resultsid=${resultsId}&friend=${friendName}&id=${id}&user=${user}`;
+        window.location.href = resultUrl;  // Redirect to the results page
     });
 </script>
 
