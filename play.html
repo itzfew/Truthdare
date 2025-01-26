@@ -103,7 +103,34 @@ h1 {
 }
 
 /* Leaderboard Modal */
-.modal {
+.modal-content h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #007BFF;
+}
+
+.leaderboard-item {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-entry {
+  font-size: 16px;
+  color: #333;
+}
+
+.leaderboard-entry em {
+  font-weight: bold;
+}
+
+.leaderboard-entry small {
+  color: #777;
+}
+
+#leaderboardModal {
   display: none;
   position: fixed;
   z-index: 1;
@@ -111,7 +138,7 @@ h1 {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.6); /* Darker background */
   padding-top: 60px;
 }
 
@@ -123,11 +150,9 @@ h1 {
   width: 80%;
   max-width: 600px;
   border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.modal-content h2 {
-  text-align: center;
-}
 
 .close {
   color: #aaa;
@@ -276,25 +301,35 @@ h1 {
       }
     }
 
-    // Show leaderboard modal
-    function showLeaderboard(pollId) {
-      const responsesRef = database.ref(`polls/${pollId}/responses`);
-      responsesRef.once('value', snapshot => {
-        const responses = snapshot.val();
-        leaderboardDiv.innerHTML = '';
-        if (responses) {
-          for (let id in responses) {
-            const response = responses[id];
-            const responseDiv = document.createElement('div');
-            responseDiv.innerHTML = `<strong>${response.userName}</strong> voted for <em>${response.option}</em> on ${new Date(response.timestamp).toLocaleString()}`;
-            leaderboardDiv.appendChild(responseDiv);
-          }
-        } else {
-          leaderboardDiv.innerHTML = "No votes yet.";
-        }
-        leaderboardModal.style.display = "block";
+// Show leaderboard modal
+function showLeaderboard(pollId) {
+  const responsesRef = database.ref(`polls/${pollId}/responses`);
+  responsesRef.once('value', snapshot => {
+    const responses = snapshot.val();
+    leaderboardDiv.innerHTML = '';
+    
+    if (responses) {
+      // Sort responses by timestamp in descending order (latest first)
+      const sortedResponses = Object.values(responses).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      sortedResponses.forEach(response => {
+        const responseDiv = document.createElement('div');
+        responseDiv.classList.add('leaderboard-item');
+        responseDiv.innerHTML = `
+          <div class="leaderboard-entry">
+            <strong>${response.userName}</strong> voted for <em>${response.option}</em><br>
+            <small>on ${new Date(response.timestamp).toLocaleString()}</small>
+          </div>
+        `;
+        leaderboardDiv.appendChild(responseDiv);
       });
+    } else {
+      leaderboardDiv.innerHTML = "No votes yet.";
     }
+
+    leaderboardModal.style.display = "block";
+  });
+}
 
     // Close leaderboard modal
     closeModal.addEventListener("click", () => {
