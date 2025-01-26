@@ -87,7 +87,7 @@
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Sample Questions
+    // Sample Questions (quiz content)
     const questions = [
       {
         id: 1,
@@ -243,9 +243,14 @@
         if (responseData) {
           document.getElementById("results").style.display = "block";
           document.getElementById("result-answers").innerHTML = `
-            User: ${responseData.userName}<br>
-            Score: ${responseData.score}<br>
-            Answers: ${JSON.stringify(responseData.answers)}
+            <h3>User: ${responseData.userName}</h3>
+            <h4>Score: ${responseData.score}</h4>
+            <h4>Answers:</h4>
+            <ul>
+              ${responseData.answers.map((answer, index) => 
+                `<li>Q${answer.questionId}: ${answer.selectedAnswer}</li>`
+              ).join('')}
+            </ul>
           `;
         }
       });
@@ -261,9 +266,15 @@
             const response = responses[responseKey];
             responseListHTML += `
               <div>
-                User: ${response.userName}<br>
+                <strong>User: ${response.userName}</strong><br>
                 Score: ${response.score}<br>
-                Answers: ${JSON.stringify(response.answers)}<br><br>
+                <h4>Answers:</h4>
+                <ul>
+                  ${response.answers.map(answer => 
+                    `<li>Q${answer.questionId}: ${answer.selectedAnswer}</li>`
+                  ).join('')}
+                </ul>
+                <br><br>
               </div>
             `;
           }
