@@ -38,15 +38,13 @@
     const quizContent = document.getElementById('quizContent');
     let friendAnswers = {};
 
+    // Generate questions for the friend to answer without showing the original answers
     for (let i = 1; i <= 9; i++) {
         const question = `question${i}`;
-        const answer = answers[question];
         
         quizContent.innerHTML += `
             <div class="question">
-                <label for="${question}">Your answer to "${question}" was:</label>
-                <p>${answer}</p>
-                <label for="${question}_friend">What do you think your friend would answer?</label><br>
+                <label for="${question}">What do you think your friend would answer for question ${i}?</label><br>
                 <input type="radio" name="${question}" value="Red" id="${question}_option1" required> Red
                 <input type="radio" name="${question}" value="Blue" id="${question}_option2"> Blue
             </div>
@@ -66,8 +64,9 @@
 
         let score = 0;
 
+        // Check each question and compare answers
         for (let i = 1; i <= 9; i++) {
-            const selectedAnswer = document.querySelector(`input[name="question${i}"]:checked`).value;
+            const selectedAnswer = document.querySelector(`input[name="question${i}"]:checked`)?.value;
             const correctAnswer = answers[`question${i}`];
 
             if (selectedAnswer === correctAnswer) {
