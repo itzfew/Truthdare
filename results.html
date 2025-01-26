@@ -1,66 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friendship Quiz - Results</title>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
-        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; }
-        .button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .button:hover { background-color: #0056b3; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    .btn {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: white;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
+  <div class="container" id="app">
+    <h1 id="header">Quiz App</h1>
+    <form id="quiz-form">
+      <div id="questions">
+        <!-- Questions will be dynamically rendered here -->
+      </div>
+      <div id="nameInput">
+        <label for="name">Enter your name:</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <button type="submit" class="btn" id="submitBtn">Submit</button>
+    </form>
+    <div id="results" style="display:none;">
+      <h2>Results</h2>
+      <div id="resultsList"></div>
+    </div>
+  </div>
 
-<div class="container">
-    <h1>Friendship Quiz - Results</h1>
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+      authDomain: "truth-dare-5a92c.firebaseapp.com",
+      databaseURL: "https://truth-dare-5a92c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "truth-dare-5a92c",
+      storageBucket: "truth-dare-5a92c.firebasestorage.app",
+      messagingSenderId: "299104332770",
+      appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+      measurementId: "G-NER090QMCZ"
+    };
 
-    <div id="resultsContent"></div>
-</div>
-
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const resultsId = urlParams.get('resultsid');
-    const friendName = urlParams.get('friend');
-    const quizId = urlParams.get('id');
-
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    const resultsContent = document.getElementById('resultsContent');
 
-    // Fetch quiz and friend's responses from Firebase
-    database.ref('quizzes/' + quizId).once('value').then((quizSnapshot) => {
-        const quizData = quizSnapshot.val();
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizId = urlParams.get("id");
+    const responsesId = urlParams.get("responsesid");
+    const userName = urlParams.get("user");
 
-        database.ref('responses/' + resultsId).once('value').then((responseSnapshot) => {
-            const responseData = responseSnapshot.val();
-            resultsContent.innerHTML += `<h3>Results for: ${friendName}</h3>`;
+    const questions = [
+      {
+        question: "What is the capital of France?",
+        options: ["Paris", "London", "Berlin", "Madrid"],
+        id: "q1"
+      },
+      {
+        question: "What is 5 + 3?",
+        options: ["8", "7", "10", "5"],
+        id: "q2"
+      }
+    ];
 
-            let score = 0;
-            let totalQuestions = Object.keys(quizData).length;
+    const app = document.getElementById("app");
+    const quizForm = document.getElementById("quiz-form");
+    const questionsDiv = document.getElementById("questions");
+    const nameInputDiv = document.getElementById("nameInput");
+    const header = document.getElementById("header");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultsDiv = document.getElementById("results");
+    const resultsList = document.getElementById("resultsList");
 
-            for (let questionKey in quizData) {
-                const correctAnswer = quizData[questionKey].options[0];  // Assuming the first option is always the correct one
-                const userAnswer = responseData.responses[questionKey];
-                const result = userAnswer === correctAnswer ? "Correct" : "Wrong";
-
-                if (result === "Correct") score++;
-
-                resultsContent.innerHTML += `
-                    <p><strong>${quizData[questionKey].question}</strong></p>
-                    <p>Your answer: ${userAnswer}</p>
-                    <p>Correct answer: ${correctAnswer}</p>
-                    <p>Result: ${result}</p><hr>
-                `;
-            }
-
-            resultsContent.innerHTML += `<h2>Total Score: ${score} / ${totalQuestions}</h2>`;
+    // Dynamically render questions
+    function renderQuestions() {
+      questions.forEach((q) => {
+        const questionDiv = document.createElement("div");
+        questionDiv.classList.add("question");
+        questionDiv.innerHTML = `<p>${q.question}</p>`;
+        q.options.forEach((option) => {
+          const optionLabel = document.createElement("label");
+          optionLabel.innerHTML = `<input type="radio" name="${q.id}" value="${option}" required> ${option}`;
+          questionDiv.appendChild(optionLabel);
         });
-    });
-</script>
+        questionsDiv.appendChild(questionDiv);
+      });
+    }
 
+    if (responsesId) {
+      // Fetch and show responses
+      database.ref(`quizzes/${quizId}/responses/${responsesId}`).once("value")
+        .then(snapshot => {
+          const responseData = snapshot.val();
+          if (responseData) {
+            header.textContent = `Results for ${responseData.name}`;
+            quizForm.style.display = "none";
+            resultsDiv.style.display = "block";
+
+            questions.forEach((q) => {
+              const correctAnswer = responseData.answers[q.id] === responseData.correctAnswers[q.id] ? "Correct" : "Incorrect";
+              resultsList.innerHTML += `<p>${q.question}: ${correctAnswer}</p>`;
+            });
+          }
+        });
+    } else {
+      // Render quiz
+      renderQuestions();
+
+      if (quizId && userName) {
+        // Friend answering quiz
+        header.textContent = `Friend's Quiz: ${userName}`;
+        nameInputDiv.style.display = "none";
+
+        quizForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const name = prompt("Enter your name to submit:");
+          const answers = {};
+          questions.forEach((q) => {
+            answers[q.id] = document.querySelector(`input[name="${q.id}"]:checked`).value;
+          });
+
+          database.ref(`quizzes/${quizId}`).once("value").then((snapshot) => {
+            const originalData = snapshot.val();
+            const responseId = database.ref(`quizzes/${quizId}/responses`).push().key;
+
+            const responseData = {
+              name,
+              answers,
+              correctAnswers: originalData.answers
+            };
+
+            database.ref(`quizzes/${quizId}/responses/${responseId}`).set(responseData).then(() => {
+              alert("Answers submitted! Use the responsesid to view the results.");
+              quizForm.reset();
+            });
+          });
+        });
+      } else {
+        // Regular quiz
+        quizForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const name = document.getElementById("name").value;
+          const answers = {};
+          questions.forEach((q) => {
+            answers[q.id] = document.querySelector(`input[name="${q.id}"]:checked`).value;
+          });
+
+          const newQuizId = database.ref("quizzes").push().key;
+
+          const data = {
+            quizId: newQuizId,
+            name,
+            answers
+          };
+
+          database.ref("quizzes/" + newQuizId).set(data).then(() => {
+            alert(`Quiz saved! Share this ID: ${newQuizId}`);
+            quizForm.reset();
+          });
+        });
+      }
+    }
+  </script>
 </body>
 </html>
