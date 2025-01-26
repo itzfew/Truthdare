@@ -23,21 +23,52 @@
     }
     h1 {
       text-align: center;
+      margin-bottom: 20px;
     }
     .poll {
       margin-bottom: 20px;
       padding: 15px;
       border-radius: 8px;
       border: 1px solid #ddd;
+      background: #fafafa;
+    }
+    .poll-options {
+      margin-top: 10px;
     }
     .poll-options label {
       display: block;
       margin-bottom: 8px;
       cursor: pointer;
+      position: relative;
+      padding-left: 35px;
+    }
+    .poll-options input {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 25px;
+      height: 25px;
+    }
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background-color: #ddd;
+      margin-top: 5px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #007BFF;
+      border-radius: 5px;
+    }
+    .selected-option {
+      background-color: #e0f7fa;
+      border: 1px solid #00bcd4;
     }
     .btn {
       display: block;
-      margin: 10px auto;
+      margin: 20px auto;
       padding: 10px 20px;
       font-size: 16px;
       color: white;
@@ -48,20 +79,6 @@
     }
     .btn:hover {
       background-color: #0056b3;
-    }
-    .progress-container {
-      width: 100%;
-      background: #f3f3f3;
-      margin-top: 20px;
-      height: 8px;
-      border-radius: 5px;
-      display: none;
-    }
-    .progress-bar {
-      height: 100%;
-      width: 0;
-      background: #4caf50;
-      border-radius: 5px;
     }
     .spinner {
       display: none;
@@ -77,16 +94,58 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    /* Leaderboard Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      padding-top: 60px;
+    }
+    .modal-content {
+      background-color: white;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+    }
+    .modal-content h2 {
+      text-align: center;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="container" id="app">
     <h1>Poll App</h1>
     <div id="polls"></div>
-    <div class="progress-container" id="progress-container">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
     <div class="spinner" id="spinner"></div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>Leaderboard</h2>
+      <div id="leaderboard"></div>
+    </div>
   </div>
 
   <script>
@@ -108,9 +167,10 @@
 
     const app = document.getElementById("app");
     const pollsDiv = document.getElementById("polls");
-    const progressContainer = document.getElementById("progress-container");
-    const progressBar = document.getElementById("progress-bar");
     const spinner = document.getElementById("spinner");
+    const leaderboardModal = document.getElementById("leaderboardModal");
+    const leaderboardDiv = document.getElementById("leaderboard");
+    const closeModal = document.getElementById("closeModal");
 
     // Load Polls from Firebase
     function loadPolls() {
@@ -127,17 +187,30 @@
             <div class="poll-options">
               ${poll.options.map((option, index) => {
                 const percentage = calculatePercentage(poll.votes, option);
+                const userVote = localStorage.getItem(`poll-${id}`);
+                const isChecked = userVote === option ? 'checked' : '';
                 return `
-                  <label>
-                    <input type="radio" name="poll-${id}" value="${option}" ${hasUserVoted(id) ? 'disabled' : ''}>
-                    ${option} - ${percentage}% Votes
+                  <label class="poll-option" data-option="${option}">
+                    <input type="radio" name="poll-${id}" value="${option}" ${isChecked} ${hasUserVoted(id) ? 'disabled' : ''} onclick="promptForNameAndVote('${id}', '${option}')">
+                    ${option}
+                    <div class="progress-container">
+                      <div class="progress-bar" style="width: ${percentage}%"></div>
+                    </div>
+                    <span class="percentage-text">${percentage}%</span>
                   </label>
                 `;
               }).join('')}
             </div>
-            <button class="btn" onclick="submitPoll('${id}', '${poll.question}')">Submit Answer</button>
+            <button class="btn" id="leaderboardBtn-${id}" onclick="showLeaderboard('${id}')">View Leaderboard</button>
           `;
           pollsDiv.appendChild(pollDiv);
+
+          // Hide 'Submit Answer' button if user has already voted
+          if (hasUserVoted(id)) {
+            document.getElementById(`leaderboardBtn-${id}`).style.display = "block";
+          } else {
+            document.getElementById(`leaderboardBtn-${id}`).style.display = "none";
+          }
         }
       });
     }
@@ -155,59 +228,67 @@
       return userVote !== null;
     }
 
-    // Submit Poll Answer
-    function submitPoll(pollId, question) {
-      const selectedOption = document.querySelector(`input[name="poll-${pollId}"]:checked`);
-      if (!selectedOption) {
-        alert("Please select an option.");
-        return;
-      }
-
-      const answer = selectedOption.value;
+    // Prompt for Name and Save User Vote
+    function promptForNameAndVote(pollId, selectedOption) {
       const userVote = localStorage.getItem(`poll-${pollId}`);
+      if (!userVote) {
+        const userName = prompt("Please enter your name:");
 
-      // Prevent re-voting
-      if (userVote) {
-        alert("You've already voted on this poll.");
-        return;
-      }
+        if (userName) {
+          // Save vote with timestamp
+          const timestamp = new Date().toISOString();
+          localStorage.setItem(`poll-${pollId}`, selectedOption); // Store user's vote in localStorage
 
-      // Show progress
-      spinner.style.display = "block";
-      progressContainer.style.display = "block";
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        progressBar.style.width = `${progress}%`;
-        if (progress >= 100) {
-          clearInterval(interval);
-        }
-      }, 500);
-
-      // Save user's response to Firebase
-      const pollRef = database.ref(`polls/${pollId}`);
-      pollRef.once('value', (snapshot) => {
-        const poll = snapshot.val();
-        const updatedVotes = { ...poll.votes };
-        updatedVotes[answer] = (updatedVotes[answer] || 0) + 1;
-
-        pollRef.update({ votes: updatedVotes })
-          .then(() => {
-            // Save response in localStorage to prevent re-voting
-            localStorage.setItem(`poll-${pollId}`, answer);
-            spinner.style.display = "none";
-            progressContainer.style.display = "none";
-            alert("Your response has been recorded!");
-          })
-          .catch((error) => {
-            spinner.style.display = "none";
-            progressContainer.style.display = "none";
-            console.error("Error saving poll response: ", error);
-            alert("An error occurred while saving your response. Please try again.");
+          // Save vote to Firebase (User's choice and timestamp)
+          const userVoteRef = database.ref(`polls/${pollId}/responses`);
+          userVoteRef.push({
+            userName,
+            option: selectedOption,
+            timestamp
           });
+
+          // Increment vote count for the selected option
+          const votesRef = database.ref(`polls/${pollId}/votes`);
+          votesRef.child(selectedOption).transaction((currentVotes) => {
+            return (currentVotes || 0) + 1;
+          });
+
+          // Show spinner while updating
+          spinner.style.display = "block";
+          setTimeout(() => {
+            spinner.style.display = "none";
+            loadPolls();
+          }, 2000);
+        }
+      }
+    }
+
+    // Show leaderboard modal
+    function showLeaderboard(pollId) {
+      const responsesRef = database.ref(`polls/${pollId}/responses`);
+      responsesRef.once('value', snapshot => {
+        const responses = snapshot.val();
+        leaderboardDiv.innerHTML = '';
+        if (responses) {
+          for (let id in responses) {
+            const response = responses[id];
+            const responseDiv = document.createElement('div');
+            responseDiv.innerHTML = `<strong>${response.userName}</strong> voted for <em>${response.option}</em> on ${new Date(response.timestamp).toLocaleString()}`;
+            leaderboardDiv.appendChild(responseDiv);
+          }
+        } else {
+          leaderboardDiv.innerHTML = "No votes yet.";
+        }
+        leaderboardModal.style.display = "block";
       });
     }
 
+    // Close leaderboard modal
+    closeModal.addEventListener("click", () => {
+      leaderboardModal.style.display = "none";
+    });
+
+    // Initialize Polls
     loadPolls();
   </script>
 </body>
