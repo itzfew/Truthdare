@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendship Quiz - Play</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; }
+        label { font-weight: bold; }
+        .question { margin-bottom: 20px; }
+        .button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Friendship Quiz</h1>
+    <div id="quizContent"></div>
+    <button id="submitBtn" class="button" style="display: none;">Submit</button>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const user = urlParams.get('user');
+    const id = urlParams.get('id');
+
+    const answers = JSON.parse(localStorage.getItem(id));
+
+    const quizContent = document.getElementById('quizContent');
+    let friendAnswers = {};
+
+    for (let i = 1; i <= 9; i++) {
+        const question = `question${i}`;
+        const answer = answers[question];
+
+        quizContent.innerHTML += `
+            <div class="question">
+                <label for="${question}">Your answer to "${question}" was:</label>
+                <p>${answer}</p>
+                <label for="${question}_friend">What do you think your friend would answer?</label>
+                <input type="text" id="${question}_friend">
+            </div>
+        `;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.style.display = 'block';
+    submitBtn.addEventListener('click', function() {
+        for (let i = 1; i <= 9; i++) {
+            const friendAnswer = document.getElementById(`question${i}_friend`).value;
+            friendAnswers[`question${i}`] = friendAnswer;
+        }
+
+        const friendName = prompt("Enter your friend's name:");
+        localStorage.setItem(id + '_friend', JSON.stringify(friendAnswers));
+
+        window.location.href = `/play.html?user=${user}&friend=${friendName}&id=${id}`;
+    });
+</script>
+
+</body>
+</html>
