@@ -61,14 +61,10 @@
       </div>
       <button type="submit" class="btn" id="submitBtn">Submit</button>
     </form>
-    <div id="results" style="display:none;">
-      <h2>Results</h2>
-      <div id="resultsList"></div>
-    </div>
   </div>
 
   <script>
-    // Firebase configuration
+        // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
       authDomain: "truth-dare-5a92c.firebaseapp.com",
@@ -79,16 +75,16 @@
       appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
       measurementId: "G-NER090QMCZ"
     };
-
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // Get query parameters
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get("id");
-    const responsesId = urlParams.get("responsesid");
-    const userName = urlParams.get("user");
+    const userNameParam = urlParams.get("user");
 
+    // Sample questions
     const questions = [
       {
         question: "What is the capital of France?",
@@ -107,11 +103,8 @@
     const questionsDiv = document.getElementById("questions");
     const nameInputDiv = document.getElementById("nameInput");
     const header = document.getElementById("header");
-    const submitBtn = document.getElementById("submitBtn");
-    const resultsDiv = document.getElementById("results");
-    const resultsList = document.getElementById("resultsList");
 
-    // Dynamically render questions
+    // Render questions dynamically
     function renderQuestions() {
       questions.forEach((q) => {
         const questionDiv = document.createElement("div");
@@ -126,79 +119,50 @@
       });
     }
 
-    if (responsesId) {
-      // Fetch and show responses
-      database.ref(`quizzes/${quizId}/responses/${responsesId}`).once("value")
-        .then(snapshot => {
-          const responseData = snapshot.val();
-          if (responseData) {
-            header.textContent = `Results for ${responseData.name}`;
-            quizForm.style.display = "none";
-            resultsDiv.style.display = "block";
+    renderQuestions();
 
-            questions.forEach((q) => {
-              const correctAnswer = responseData.answers[q.id] === responseData.correctAnswers[q.id] ? "Correct" : "Incorrect";
-              resultsList.innerHTML += `<p>${q.question}: ${correctAnswer}</p>`;
-            });
-          }
-        });
-    } else {
-      // Render quiz
-      renderQuestions();
+    // Handle form submission
+    quizForm.addEventListener("submit", (e) => {
+      e.preventDefault();
 
-      if (quizId && userName) {
-        // Friend answering quiz
-        header.textContent = `Friend's Quiz: ${userName}`;
-        nameInputDiv.style.display = "none";
+      const name = document.getElementById("name").value;
+      const answers = {};
 
-        quizForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const name = prompt("Enter your name to submit:");
-          const answers = {};
-          questions.forEach((q) => {
-            answers[q.id] = document.querySelector(`input[name="${q.id}"]:checked`).value;
-          });
+      // Collect answers
+      questions.forEach((q) => {
+        answers[q.id] = document.querySelector(`input[name="${q.id}"]:checked`).value;
+      });
 
-          database.ref(`quizzes/${quizId}`).once("value").then((snapshot) => {
-            const originalData = snapshot.val();
-            const responseId = database.ref(`quizzes/${quizId}/responses`).push().key;
-
-            const responseData = {
-              name,
-              answers,
-              correctAnswers: originalData.answers
-            };
-
-            database.ref(`quizzes/${quizId}/responses/${responseId}`).set(responseData).then(() => {
-              alert("Answers submitted! Use the responsesid to view the results.");
-              quizForm.reset();
-            });
-          });
-        });
-      } else {
-        // Regular quiz
-        quizForm.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const name = document.getElementById("name").value;
-          const answers = {};
-          questions.forEach((q) => {
-            answers[q.id] = document.querySelector(`input[name="${q.id}"]:checked`).value;
-          });
-
-          const newQuizId = database.ref("quizzes").push().key;
-
-          const data = {
-            quizId: newQuizId,
-            name,
-            answers
-          };
-
-          database.ref("quizzes/" + newQuizId).set(data).then(() => {
-            alert(`Quiz saved! Share this ID: ${newQuizId}`);
-            quizForm.reset();
-          });
-        });
+      if (!quizId) {
+        alert("Quiz ID is missing in the URL!");
+        return;
       }
+
+      // Generate a new response ID
+      const responseId = database.ref(`quizzes/${quizId}/responses`).push().key;
+
+      // Save data to Firebase
+      const responseData = {
+        name,
+        answers
+      };
+
+      database.ref(`quizzes/${quizId}/responses/${responseId}`).set(responseData)
+        .then(() => {
+          alert("Your responses have been saved!");
+          // Redirect with response ID
+          window.location.href = `index.html?id=${quizId}&responsesid=${responseId}`;
+        })
+        .catch((error) => {
+          console.error("Error saving data: ", error);
+          alert("An error occurred while saving your responses. Please try again.");
+        });
+    });
+
+    // Customize header if userNameParam is present
+    if (userNameParam) {
+      header.textContent = `Quiz for ${userNameParam}`;
+      nameInputDiv.style.display = "none";
     }
   </script>
 </body>
