@@ -3,16 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friendship Quiz - Play</title>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+    <title>Play Friendship Quiz</title>
+    <script type="module">
+        // Import the required functions from Firebase Modular SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+            authDomain: "truth-dare-5a92c.firebaseapp.com",
+            projectId: "truth-dare-5a92c",
+            storageBucket: "truth-dare-5a92c.firebasestorage.app",
+            messagingSenderId: "299104332770",
+            appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+            measurementId: "G-NER090QMCZ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Get quiz ID from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('id');
+
+        // Fetch quiz data from Firebase and display the questions
+        get(ref(database, 'quizzes/' + quizId)).then((snapshot) => {
+            if (snapshot.exists()) {
+                const quizData = snapshot.val();
+                const quizContent = document.getElementById("quizContent");
+
+                for (let questionKey in quizData) {
+                    const question = quizData[questionKey].question;
+                    const options = quizData[questionKey].options;
+                    quizContent.innerHTML += `
+                        <div class="question-section">
+                            <label>${question}</label><br>
+                            <input type="radio" name="${questionKey}" value="${options[0]}" required> ${options[0]}<br>
+                            <input type="radio" name="${questionKey}" value="${options[1]}"> ${options[1]}<br>
+                        </div>
+                    `;
+                }
+            } else {
+                alert("Quiz not found.");
+            }
+        }).catch((error) => {
+            console.error("Error fetching quiz: ", error);
+        });
+
+        document.getElementById("submitQuizBtn").addEventListener("click", function() {
+            const responses = {};
+            let allAnswered = true;
+
+            const quizContent = document.getElementById("quizContent");
+            for (let questionKey in quizData) {
+                const answer = document.querySelector(`input[name="${questionKey}"]:checked`);
+                if (answer) {
+                    responses[questionKey] = answer.value;
+                } else {
+                    allAnswered = false;
+                }
+            }
+
+            if (allAnswered) {
+                // Save the responses to Firebase
+                const responseId = ref(database, 'responses').push().key;
+                set(ref(database, 'responses/' + responseId), {
+                    quizId: quizId,
+                    responses: responses
+                }).then(() => {
+                    alert("Your answers have been submitted.");
+                }).catch((error) => {
+                    console.error("Error submitting answers: ", error);
+                });
+            } else {
+                alert("Please answer all the questions.");
+            }
+        });
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
-        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; color: #333; }
+        .question-section { margin-bottom: 20px; }
         label { font-weight: bold; }
-        .question { margin-bottom: 20px; }
-        .button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .button { padding: 10px 20px; background-color: #007bff; color: white; border: none; width: 100%; font-size: 16px; cursor: pointer; }
         .button:hover { background-color: #0056b3; }
     </style>
 </head>
@@ -20,72 +96,10 @@
 
 <div class="container">
     <h1>Friendship Quiz</h1>
-
-    <div class="question">
-        <label for="friendName">Enter Your Name:</label>
-        <input type="text" id="friendName" placeholder="Enter your name" required>
-    </div>
-
-    <div id="quizContent"></div>
-    <button id="submitBtn" class="button" style="display: none;">Submit</button>
+    
+    <div class="question-section" id="quizContent"></div>
+    <button id="submitQuizBtn" class="button">Submit Answers</button>
 </div>
-
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const quizId = urlParams.get('id');
-    const database = firebase.database();
-    const quizContent = document.getElementById('quizContent');
-    let friendAnswers = {};
-
-    // Fetch quiz data from Firebase
-    database.ref('quizzes/' + quizId).once('value', function(snapshot) {
-        const quizData = snapshot.val();
-        let questionIndex = 1;
-
-        for (let questionKey in quizData) {
-            const question = quizData[questionKey].question;
-            const options = quizData[questionKey].options;
-
-            quizContent.innerHTML += `
-                <div class="question">
-                    <label for="${questionKey}">${question}</label><br>
-                    <input type="radio" name="${questionKey}" value="${options[0]}" required> ${options[0]}<br>
-                    <input type="radio" name="${questionKey}" value="${options[1]}"> ${options[1]}
-                </div>
-            `;
-        }
-
-        // Show submit button
-        document.getElementById('submitBtn').style.display = 'block';
-
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            const friendName = document.getElementById('friendName').value;
-            if (!friendName) {
-                alert("Please enter your name.");
-                return;
-            }
-
-            // Collect answers
-            for (let questionKey in quizData) {
-                const selectedAnswer = document.querySelector(`input[name="${questionKey}"]:checked`)?.value;
-                friendAnswers[questionKey] = selectedAnswer;
-            }
-
-            // Save responses to Firebase
-            const responseId = database.ref().child('responses').push().key;
-
-            database.ref('responses/' + responseId).set({
-                friendName: friendName,
-                quizId: quizId,
-                responses: friendAnswers
-            }).then(() => {
-                window.location.href = `results.html?resultsid=${responseId}&friend=${friendName}&id=${quizId}`;
-            }).catch((error) => {
-                console.error('Error saving response: ', error);
-            });
-        });
-    });
-</script>
 
 </body>
 </html>
