@@ -122,55 +122,59 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Handle form submission
-    const pollForm = document.getElementById("poll-form");
-    const progressContainer = document.getElementById("progress-container");
-    const progressBar = document.getElementById("progress-bar");
-    const spinner = document.getElementById("spinner");
+// Handle form submission
+const pollForm = document.getElementById("poll-form");
+const progressContainer = document.getElementById("progress-container");
+const progressBar = document.getElementById("progress-bar");
+const spinner = document.getElementById("spinner");
 
-    pollForm.addEventListener("submit", (e) => {
-      e.preventDefault();
+pollForm.addEventListener("submit", (e) => {
+  e.preventDefault();
 
-      const question = document.getElementById("question").value;
-      const options = document.getElementById("options").value.split(',');
+  const question = document.getElementById("question").value;
+  const options = document.getElementById("options").value.split(',');
 
-      // Show spinner and progress bar
-      spinner.style.display = "block";
-      progressContainer.style.display = "block";
-      let progress = 0;
+  // Get current date in YYYY-MM-DD format
+  const currentDate = new Date().toISOString().split('T')[0];
 
-      // Simulate progress
-      const interval = setInterval(() => {
-        progress += 10;
-        progressBar.style.width = `${progress}%`;
-        if (progress >= 100) {
-          clearInterval(interval);
-        }
-      }, 500);
+  // Show spinner and progress bar
+  spinner.style.display = "block";
+  progressContainer.style.display = "block";
+  let progress = 0;
 
-      // Save poll data to Firebase
-      const pollData = {
-        question,
-        options
-      };
+  // Simulate progress
+  const interval = setInterval(() => {
+    progress += 10;
+    progressBar.style.width = `${progress}%`;
+    if (progress >= 100) {
+      clearInterval(interval);
+    }
+  }, 500);
 
-      const newPollRef = database.ref('polls').push();
-      newPollRef.set(pollData)
-        .then(() => {
-          // Hide spinner and progress bar
-          spinner.style.display = "none";
-          progressContainer.style.display = "none";
-          alert("Poll has been saved successfully!");
-          pollForm.reset();
-        })
-        .catch((error) => {
-          // Hide spinner and progress bar on error
-          spinner.style.display = "none";
-          progressContainer.style.display = "none";
-          console.error("Error saving poll: ", error);
-          alert("An error occurred while saving the poll. Please try again.");
-        });
+  // Save poll data to Firebase
+  const pollData = {
+    question,
+    options,
+    date: currentDate // Include the current date
+  };
+
+  const newPollRef = database.ref('polls').push();
+  newPollRef.set(pollData)
+    .then(() => {
+      // Hide spinner and progress bar
+      spinner.style.display = "none";
+      progressContainer.style.display = "none";
+      alert("Poll has been saved successfully!");
+      pollForm.reset();
+    })
+    .catch((error) => {
+      // Hide spinner and progress bar on error
+      spinner.style.display = "none";
+      progressContainer.style.display = "none";
+      console.error("Error saving poll: ", error);
+      alert("An error occurred while saving the poll. Please try again.");
     });
+});
   </script>
 </body>
 </html>
