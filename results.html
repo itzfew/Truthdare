@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App</title>
+  <title>Poll App</title>
   <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
   <style>
@@ -23,18 +23,52 @@
     }
     h1 {
       text-align: center;
-    }
-    .question {
       margin-bottom: 20px;
     }
-    .options label {
+    .poll {
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+    }
+    .poll-options {
+      margin-top: 10px;
+    }
+    .poll-options label {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       cursor: pointer;
+      position: relative;
+      padding-left: 35px;
+    }
+    .poll-options input {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 25px;
+      height: 25px;
+    }
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background-color: #ddd;
+      margin-top: 5px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #007BFF;
+      border-radius: 5px;
+    }
+    .selected-option {
+      background-color: #e0f7fa;
+      border: 1px solid #00bcd4;
     }
     .btn {
       display: block;
-      margin: 10px auto;
+      margin: 20px auto;
       padding: 10px 20px;
       font-size: 16px;
       color: white;
@@ -46,185 +80,232 @@
     .btn:hover {
       background-color: #0056b3;
     }
+    .spinner {
+      display: none;
+      margin: 0 auto;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 2s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Leaderboard Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      padding-top: 60px;
+    }
+    .modal-content {
+      background-color: white;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+    }
+    .modal-content h2 {
+      text-align: center;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div id="quiz-container">
-        <h1>Quiz App</h1>
-        <div id="questions"></div>
-        <input type="text" id="user-name" placeholder="Enter your name" />
-        <button id="generate-btn">Generate Quiz</button>
-        <button id="submit-btn" style="display:none;">Submit & View</button>
-    </div>
+  <div class="container" id="app">
+    <h1>Poll App</h1>
+    <div id="polls"></div>
+    <div class="spinner" id="spinner"></div>
+  </div>
 
-    <div id="results" style="display:none;">
-        <h2>Results</h2>
-        <div id="result-answers"></div>
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>Leaderboard</h2>
+      <div id="leaderboard"></div>
     </div>
+  </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-database.js"></script>
-    
   <script>
-    // Firebase Configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
-    authDomain: "truth-dare-5a92c.firebaseapp.com",
-    databaseURL: "https://truth-dare-5a92c-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "truth-dare-5a92c",
-    storageBucket: "truth-dare-5a92c.firebasestorage.app",
-    messagingSenderId: "299104332770",
-    appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
-    measurementId: "G-NER090QMCZ"
-};
-
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// Sample Questions
-const questions = [
-    {
-        id: 1,
-        question: "What is 2 + 2?",
-        options: ["3", "4", "5", "6"],
-        correctAnswer: "4"
-    },
-    {
-        id: 2,
-        question: "What is the capital of France?",
-        options: ["Paris", "Berlin", "Madrid", "Rome"],
-        correctAnswer: "Paris"
-    }
-];
-
-// Variables
-let quizId = null;
-let userName = null;
-
-// Load quiz based on URL parameters
-const urlParams = new URLSearchParams(window.location.search);
-const quizIdParam = urlParams.get('id');
-const userNameParam = urlParams.get('user');
-
-// Initialize Quiz if URL parameters exist
-if (quizIdParam && userNameParam) {
-    quizId = quizIdParam;
-    userName = userNameParam;
-    loadQuizFromDatabase(quizId, userName);
-} else {
-    loadQuestions();
-}
-
-// Load Questions
-function loadQuestions() {
-    const questionsDiv = document.getElementById("questions");
-    questionsDiv.innerHTML = "";
-    questions.forEach((question, index) => {
-        const questionElement = document.createElement("div");
-        questionElement.classList.add("question");
-        questionElement.innerHTML = `
-            <p>${index + 1}. ${question.question}</p>
-            ${question.options.map(option => 
-                `<label><input type="radio" name="q${question.id}" value="${option}"> ${option}</label><br>`
-            ).join('')}
-        `;
-        questionsDiv.appendChild(questionElement);
-    });
-
-    document.getElementById("generate-btn").addEventListener("click", () => {
-        userName = document.getElementById("user-name").value;
-        generateQuizIdAndSave();
-    });
-}
-
-// Generate quiz ID and save answers
-function generateQuizIdAndSave() {
-    quizId = 'quiz-' + new Date().getTime();
-    const selectedAnswers = getSelectedAnswers();
-
-    // Save quiz data to Firebase
-    const quizData = {
-        quizId: quizId,
-        userName: userName,
-        questions: selectedAnswers
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
+      authDomain: "truth-dare-5a92c.firebaseapp.com",
+      databaseURL: "https://truth-dare-5a92c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "truth-dare-5a92c",
+      storageBucket: "truth-dare-5a92c.firebasestorage.app",
+      messagingSenderId: "299104332770",
+      appId: "1:299104332770:web:469c2a277ad01e57efa7bb",
+      measurementId: "G-NER090QMCZ"
     };
 
-    db.ref('quizzes/' + quizId).set(quizData);
-    
-    document.getElementById("generate-btn").style.display = "none";
-    document.getElementById("submit-btn").style.display = "inline-block";
-}
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-// Get selected answers from the quiz form
-function getSelectedAnswers() {
-    const answers = [];
-    questions.forEach(question => {
-        const selectedOption = document.querySelector(`input[name="q${question.id}"]:checked`);
-        if (selectedOption) {
-            answers.push({
-                questionId: question.id,
-                selectedAnswer: selectedOption.value
-            });
-        }
-    });
-    return answers;
-}
+    const app = document.getElementById("app");
+    const pollsDiv = document.getElementById("polls");
+    const spinner = document.getElementById("spinner");
+    const leaderboardModal = document.getElementById("leaderboardModal");
+    const leaderboardDiv = document.getElementById("leaderboard");
+    const closeModal = document.getElementById("closeModal");
 
-// Load quiz from Firebase
-function loadQuizFromDatabase(quizId, userName) {
-    db.ref('quizzes/' + quizId).once('value', (snapshot) => {
-        const quizData = snapshot.val();
-        if (quizData) {
-            document.getElementById("questions").innerHTML = "";
-            quizData.questions.forEach((questionData, index) => {
-                const question = questions.find(q => q.id === questionData.questionId);
-                const questionElement = document.createElement("div");
-                questionElement.classList.add("question");
-                questionElement.innerHTML = `
-                    <p>${index + 1}. ${question.question}</p>
-                    ${question.options.map(option => 
-                        `<label><input type="radio" name="q${question.id}" value="${option}"> ${option}</label><br>`
-                    ).join('')}
+    // Load Polls from Firebase
+    function loadPolls() {
+      database.ref('polls').on('value', (snapshot) => {
+        const polls = snapshot.val();
+        pollsDiv.innerHTML = ''; // Clear existing polls
+
+        for (let id in polls) {
+          const poll = polls[id];
+          const pollDiv = document.createElement("div");
+          pollDiv.classList.add("poll");
+          pollDiv.innerHTML = `
+            <h3>${poll.question}</h3>
+            <div class="poll-options">
+              ${poll.options.map((option, index) => {
+                const percentage = calculatePercentage(poll.votes, option);
+                const userVote = localStorage.getItem(`poll-${id}`);
+                const isChecked = userVote === option ? 'checked' : '';
+                return `
+                  <label class="poll-option" data-option="${option}">
+                    <input type="radio" name="poll-${id}" value="${option}" ${isChecked} ${hasUserVoted(id) ? 'disabled' : ''}>
+                    ${option}
+                    <div class="progress-container">
+                      <div class="progress-bar" style="width: ${percentage}%"></div>
+                    </div>
+                    <span class="percentage-text">${percentage}%</span>
+                  </label>
                 `;
-                document.getElementById("questions").appendChild(questionElement);
-            });
+              }).join('')}
+            </div>
+            <button class="btn" id="submitBtn-${id}" onclick="submitPoll('${id}', '${poll.question}')">Submit Answer</button>
+            <button class="btn" id="leaderboardBtn-${id}" onclick="showLeaderboard('${id}')">View Leaderboard</button>
+          `;
+          pollsDiv.appendChild(pollDiv);
 
-            document.getElementById("submit-btn").style.display = "inline-block";
+          // Hide 'Submit Answer' button if user has already voted
+          if (hasUserVoted(id)) {
+            document.getElementById(`submitBtn-${id}`).style.display = "none";
+          } else {
+            document.getElementById(`leaderboardBtn-${id}`).style.display = "none";
+          }
         }
-    });
-}
+      });
+    }
 
+    // Calculate percentage of votes for an option
+    function calculatePercentage(votes, option) {
+      const totalVotes = Object.values(votes || {}).reduce((sum, count) => sum + count, 0);
+      const optionVotes = votes ? votes[option] || 0 : 0;
+      return totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
+    }
 
-// Handle quiz submission
-document.getElementById("submit-btn").addEventListener("click", () => {
-    const selectedAnswers = getSelectedAnswers();
-    const correctAnswers = questions.map(q => q.correctAnswer);
+    // Check if user has already voted (cache)
+    function hasUserVoted(pollId) {
+      const userVote = localStorage.getItem(`poll-${pollId}`);
+      return userVote !== null;
+    }
 
-    let score = 0;
-    selectedAnswers.forEach((answer, index) => {
-        if (answer.selectedAnswer === correctAnswers[index]) {
-            score++;
+    // Submit Poll Answer
+    function submitPoll(pollId, question) {
+      const selectedOption = document.querySelector(`input[name="poll-${pollId}"]:checked`);
+      if (!selectedOption) {
+        alert("Please select an option.");
+        return;
+      }
+
+      const answer = selectedOption.value;
+      const userVote = localStorage.getItem(`poll-${pollId}`);
+
+      // Prevent re-voting
+      if (userVote) {
+        alert("You've already voted on this poll.");
+        return;
+      }
+
+      // Show spinner while saving
+      spinner.style.display = "block";
+
+      // Save user's response to Firebase
+      const pollRef = database.ref(`polls/${pollId}`);
+      pollRef.once('value', (snapshot) => {
+        const poll = snapshot.val();
+        const updatedVotes = { ...poll.votes };
+        updatedVotes[answer] = (updatedVotes[answer] || 0) + 1;
+
+        pollRef.update({ votes: updatedVotes })
+          .then(() => {
+            // Save response in localStorage to prevent re-voting
+            localStorage.setItem(`poll-${pollId}`, answer);
+            spinner.style.display = "none";
+            alert("Your response has been recorded!");
+            // Hide submit button and show leaderboard
+            document.getElementById(`submitBtn-${pollId}`).style.display = "none";
+            document.getElementById(`leaderboardBtn-${pollId}`).style.display = "block";
+          })
+          .catch((error) => {
+            spinner.style.display = "none";
+            console.error("Error saving poll response: ", error);
+            alert("An error occurred while saving your response. Please try again.");
+          });
+      });
+    }
+
+    // Show Leaderboard
+    function showLeaderboard(pollId) {
+      database.ref(`polls/${pollId}/responses`).on('value', (snapshot) => {
+        const responses = snapshot.val();
+        leaderboardDiv.innerHTML = ''; // Clear existing leaderboard
+
+        for (let userId in responses) {
+          const response = responses[userId];
+          const listItem = document.createElement("div");
+          listItem.classList.add("leaderboard-item");
+          listItem.innerHTML = `
+            <p><strong>${response.name}</strong> voted for: ${response.answers[pollId]} <br> Time: ${new Date(response.timestamp).toLocaleString()}</p>
+          `;
+          leaderboardDiv.appendChild(listItem);
         }
+      });
+      leaderboardModal.style.display = "block";
+    }
+
+    // Close leaderboard modal
+    closeModal.addEventListener("click", () => {
+      leaderboardModal.style.display = "none";
     });
 
-    // Save responses
-    const responses = {
-        quizId: quizId,
-        userName: userName,
-        answers: selectedAnswers,
-        score: score
+    // Close modal if clicked outside of it
+    window.onclick = function(event) {
+      if (event.target === leaderboardModal) {
+        leaderboardModal.style.display = "none";
+      }
     };
 
-    const responseId = 'response-' + new Date().getTime();
-    db.ref('responses/' + quizId + '/' + responseId).set(responses);
-
-    // Display result
-    document.getElementById("quiz-container").style.display = "none";
-    document.getElementById("results").style.display = "block";
-    document.getElementById("result-answers").innerHTML = `You scored ${score} out of ${questions.length}`;
-});
-
+    loadPolls();
   </script>
 </body>
 </html>
