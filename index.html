@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Friendship Quiz - Create</title>
+    <title>Create Friendship Quiz</title>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
     <style>
@@ -20,8 +20,8 @@
 
 <div class="container">
     <h1>Create Friendship Quiz</h1>
-    
-    <!-- Questions Form -->
+
+    <!-- Question Form -->
     <div id="quizContent">
         <div class="question">
             <label for="question1">Question 1:</label><br>
@@ -46,7 +46,6 @@
 </div>
 
 <script>
-    // Initialize Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBTlvvGGWKaAsOyQ4zSeJ5aID_eD3nMfkI",
         authDomain: "truth-dare-5a92c.firebaseapp.com",
@@ -61,7 +60,6 @@
     const database = firebase.database(app);
 
     document.getElementById('generateQuizBtn').addEventListener('click', () => {
-        // Get the quiz questions and options
         const quizData = {
             question1: {
                 question: document.getElementById('question1').value,
@@ -70,18 +68,16 @@
             question2: {
                 question: document.getElementById('question2').value,
                 options: [document.getElementById('option2_1').value, document.getElementById('option2_2').value]
-            },
-            // Add more questions as needed
+            }
         };
 
         // Generate a unique quiz ID
         const quizId = database.ref().child('quizzes').push().key;
 
-        // Store the quiz in Firebase
+        // Save quiz data to Firebase
         database.ref('quizzes/' + quizId).set(quizData).then(() => {
-            // Generate the quiz link to share with your friend
             const quizLink = `play.html?id=${quizId}`;
-            alert('Quiz generated! Share this link: ' + quizLink);
+            alert('Quiz generated! Share this link with your friend: ' + quizLink);
         }).catch((error) => {
             console.error('Error creating quiz: ', error);
         });
